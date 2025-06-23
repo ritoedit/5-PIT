@@ -197,7 +197,7 @@
 
       localStorage.setItem("playerName", name);
 
-      // Save player to Firebase with score 0
+      // Save player to Firebase with score 0 and current timestamp
       const playerRef = db.ref("players").push();
       playerRef.set({
         name: name,
