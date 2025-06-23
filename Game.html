@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ku">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>5 PIT - Badinî Word Game</title>
+
+  <!-- Google Fonts for logo -->
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Montserrat:wght@700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- 5 PIT LOGO -->
+  <div id="game-title">
+    <span class="five">5</span>
+    <span class="pit">PIT</span>
+  </div>
+
+  <!-- Score -->
+  <div id="score">Score: 0</div>
+
+  <!-- Game board -->
+  <div id="board"></div>
+  <div id="result"></div>
+
+  <!-- Keyboard -->
+  <div id="keyboard"></div>
+
+  <!-- Buttons -->
+  <button id="restartBtn">Restart</button>
+  <button id="nextBtn">NEXT</button>
+  
+  <!-- Back to Menu Button -->
+  <button id="backBtn" onclick="saveScoreAndGoBack()">Back to Menu</button>
+
+  <!-- Tips button -->
+  <button id="tipsBtn" title="Show Tips">💡</button>
+
+  <!-- Tips popup -->
+  <div id="tipsPopup" class="hidden">
+    <div class="tip-row">
+      <span class="line-label">Line 1</span>
+      <div class="tip-squares">
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+      </div>
+      <span class="points">+5</span>
+    </div>
+    <div class="tip-row">
+      <span class="line-label">Line 2</span>
+      <div class="tip-squares">
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+      </div>
+      <span class="points">+4</span>
+    </div>
+    <div class="tip-row">
+      <span class="line-label">Line 3</span>
+      <div class="tip-squares">
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+      </div>
+      <span class="points">+3</span>
+    </div>
+    <div class="tip-row">
+      <span class="line-label">Line 4</span>
+      <div class="tip-squares">
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+      </div>
+      <span class="points">+2</span>
+    </div>
+    <div class="tip-row">
+      <span class="line-label">Line 5</span>
+      <div class="tip-squares">
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+        <div class="tip-tile correct"></div>
+      </div>
+      <span class="points">+1</span>
+    </div>
+  </div>
+
+  <!-- Leaderboard container (optional, for showing top scores) -->
+  <div id="leaderboard" style="position: fixed; top: 70px; left: 30px; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 300px; z-index: 1200;"></div>
+
+  <!-- Firebase imports -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, set, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDOpd3G5AIy9ao33zB1H-qJ5cTQyOLTURM",
+      authDomain: "kurdle-3e6d0.firebaseapp.com",
+      databaseURL: "https://kurdle-3e6d0-default-rtdb.firebaseio.com",
+      projectId: "kurdle-3e6d0",
+      storageBucket: "kurdle-3e6d0.appspot.com",
+      messagingSenderId: "565846596523",
+      appId: "1:565846596523:web:99ed4fb053f79d79b210ee",
+      measurementId: "G-PWC933CXQH"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    function updatePlayerScore(score) {
+      const playerName = localStorage.getItem("playerName") || "Anonymous";
+      set(ref(db, 'players/' + playerName), {
+        name: playerName,
+        score: score
+      });
+    }
+
+    async function loadTopScores() {
+      const leaderboardDiv = document.getElementById('leaderboard');
+      const playersRef = ref(db, 'players');
+      const q = query(playersRef, orderByChild('score'), limitToLast(5));
+      const snapshot = await get(q);
+      if (!snapshot.exists()) {
+        leaderboardDiv.innerHTML = '<p>No scores yet.</p>';
+        return;
+      }
+      // Get data and sort descending by score
+      const players = [];
+      snapshot.forEach(childSnap => {
+        players.push(childSnap.val());
+      });
+      players.sort((a, b) => b.score - a.score);
+
+      let html = '<h3>Top 5 Players</h3><ol>';
+      players.forEach(p => {
+        html += `<li>${p.name}: ${p.score}</li>`;
+      });
+      html += '</ol>';
+      leaderboardDiv.innerHTML = html;
+    }
+
+    function saveScoreAndGoBack() {
+      updatePlayerScore(window.score || 0);
+      // Wait a little to ensure data saved, then navigate
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 300);
+    }
+
+    window.updatePlayerScore = updatePlayerScore;
+    window.loadTopScores = loadTopScores;
+    window.saveScoreAndGoBack = saveScoreAndGoBack;
+
+    // Load leaderboard on page load
+    window.addEventListener('load', () => {
+      loadTopScores();
+    });
+  </script>
+
+  <script src="script.js"></script>
+</body>
+</html>

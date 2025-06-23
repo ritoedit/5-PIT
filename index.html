@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ku">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>5 PIT - Menu</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Montserrat:wght@700&display=swap" rel="stylesheet" />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #121213;
+      color: white;
+      font-family: 'Montserrat', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      position: relative;
+    }
+
+    #game-title {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    #game-title .five {
+      font-size: 100px;
+      font-weight: bold;
+      font-family: 'Permanent Marker', cursive;
+      color: #f05454;
+      text-shadow: 2px 2px 0 #b83333;
+      transform: rotate(-5deg);
+    }
+
+    #game-title .pit {
+      font-size: 72px;
+      font-weight: 700;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      text-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+    }
+
+    #name-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 25px;
+      transition: opacity 0.4s ease;
+    }
+
+    #player-name {
+      font-size: 1.2em;
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 2px solid #444;
+      width: 220px;
+      background: #222;
+      color: white;
+    }
+
+    #save-name-btn {
+      font-size: 1.1em;
+      font-weight: bold;
+      padding: 10px 25px;
+      background: #f05454;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+    }
+
+    #save-name-btn:hover {
+      background: #b83333;
+    }
+
+    #play-button {
+      font-size: 1.5em;
+      font-weight: bold;
+      padding: 15px 40px;
+      background: #4CAF50;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    #play-button.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Updated leaderboard styles */
+    #leaderboard-container {
+      position: fixed;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 1.1em;
+      z-index: 1200;
+      user-select: none;
+      text-align: center;
+      width: 180px;
+    }
+
+    #leaderboard-title {
+      color: #f05454; /* logo red */
+      font-family: 'Permanent Marker', cursive;
+      font-size: 1.8em;
+      margin-bottom: 12px;
+      user-select: none;
+    }
+
+    #leaderboard-list {
+      margin: 0;
+      padding-left: 20px;
+      list-style-type: decimal;
+      color: white;
+    }
+
+    #leaderboard-list li {
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-title">
+    <span class="five">5</span>
+    <span class="pit">PIT</span>
+  </div>
+
+  <div id="name-container">
+    <input type="text" id="player-name" placeholder="Enter your name" maxlength="15" />
+    <button id="save-name-btn">Save</button>
+  </div>
+
+  <button id="play-button" onclick="location.href='game.html'">Play</button>
+
+  <div id="leaderboard-container">
+    <h3 id="leaderboard-title">TOP 5</h3>
+    <ol id="leaderboard-list">
+      <li>Loading...</li>
+    </ol>
+  </div>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDOpd3G5AIy9ao33zB1H-qJ5cTQyOLTURM",
+      authDomain: "kurdle-3e6d0.firebaseapp.com",
+      databaseURL: "https://kurdle-3e6d0-default-rtdb.firebaseio.com",
+      projectId: "kurdle-3e6d0",
+      storageBucket: "kurdle-3e6d0.appspot.com",
+      messagingSenderId: "565846596523",
+      appId: "1:565846596523:web:99ed4fb053f79d79b210ee",
+      measurementId: "G-PWC933CXQH"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const nameContainer = document.getElementById("name-container");
+    const playerNameInput = document.getElementById("player-name");
+    const saveBtn = document.getElementById("save-name-btn");
+    const playBtn = document.getElementById("play-button");
+    const leaderboardList = document.getElementById("leaderboard-list");
+
+    const savedName = localStorage.getItem("playerName");
+
+    if (savedName) {
+      nameContainer.style.display = "none";
+      playBtn.classList.add("visible");
+    }
+
+    saveBtn.addEventListener("click", () => {
+      const name = playerNameInput.value.trim();
+      if (!name) {
+        alert("Please enter your name!");
+        return;
+      }
+
+      localStorage.setItem("playerName", name);
+
+      // Save player to Firebase with score 0
+      const playerRef = db.ref("players").push();
+      playerRef.set({
+        name: name,
+        score: 0,
+        timestamp: Date.now()
+      });
+
+      // Hide input and show play button
+      nameContainer.style.opacity = "0";
+      nameContainer.style.pointerEvents = "none";
+      setTimeout(() => {
+        nameContainer.style.display = "none";
+        playBtn.classList.add("visible");
+      }, 400);
+    });
+
+    // Load top 5 players from Firebase, sorted by highest score descending
+    function updateLeaderboard(snapshot) {
+      const players = [];
+      snapshot.forEach(child => {
+        players.push(child.val());
+      });
+
+      players.sort((a, b) => b.score - a.score);
+      const top5 = players.slice(0, 5);
+
+      leaderboardList.innerHTML = "";
+      if (top5.length === 0) {
+        leaderboardList.innerHTML = "<li>No players yet</li>";
+        return;
+      }
+      top5.forEach(player => {
+        const li = document.createElement("li");
+        li.textContent = `${player.name} - ${player.score}`;
+        leaderboardList.appendChild(li);
+      });
+    }
+
+    db.ref("players").on("value", updateLeaderboard);
+  </script>
+</body>
+</html>
