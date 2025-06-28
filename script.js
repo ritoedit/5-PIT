@@ -1,5 +1,5 @@
 const words = [
-  "qelem", "baran", "kolan", "sarok", "zarok", "diwar", "berik", "penir", "nivro",
+  "qalam", "baran", "kolan", "sarok", "zarok", "diwar", "berik", "penir", "nivro",
   "bezar", "qitar", "melak", "afsar", "duhok", "zakho", "qamis", "ribar", "pivaz",
   "stran", "fanos", "jgara", "ninok", "dikel", "kashi", "tebax", "sonda", "golav",
   "bngah", "pshik", "gelas", "parda", "korsi", "papor", "hejir", "kolav", "senik",
